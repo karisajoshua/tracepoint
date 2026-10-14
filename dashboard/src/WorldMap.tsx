@@ -13,11 +13,11 @@ let loading:Promise<LeafletAPI>|undefined;
 function loadLeaflet():Promise<LeafletAPI>{
  if(window.L)return Promise.resolve(window.L);
  if(loading)return loading;
- loading=new Promise((resolve,reject)=>{
+ loading=new Promise<LeafletAPI>((resolve,reject)=>{
  if(!document.querySelector('link[data-tracepoint-leaflet]')){const css=document.createElement('link');css.rel='stylesheet';css.href=leafletCss;css.dataset.tracepointLeaflet='1';document.head.appendChild(css);}
  const script=document.createElement('script');script.src=leafletJs;script.async=true;script.onload=()=>window.L?resolve(window.L):reject(new Error('Map library unavailable'));script.onerror=()=>reject(new Error('Could not load map library'));document.head.appendChild(script);
  }).catch(e=>{loading=undefined;throw e;});
- return loading;
+ return loading!;
 }
 const samples:[number,number,string][]=[[40.71,-74.01,'New York'],[51.51,-0.13,'London'],[-1.29,36.82,'Nairobi'],[1.35,103.82,'Singapore'],[35.68,139.69,'Tokyo'],[-33.87,151.21,'Sydney']];
 export default function WorldMap({demo}:{demo:boolean}){
