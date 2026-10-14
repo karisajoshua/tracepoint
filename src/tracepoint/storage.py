@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import os
-from sqlalchemy import create_engine, String, DateTime, Integer, ForeignKey, select, func
+from sqlalchemy import create_engine, String, DateTime, Integer, ForeignKey, Text, select, func
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -25,6 +25,23 @@ class AlertRow(Base):
     severity: Mapped[str] = mapped_column(String(12))
     reason: Mapped[str] = mapped_column(String(250))
     detected_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True))
+
+class IncidentRow(Base):
+    __tablename__ = "incidents"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    alert_id: Mapped[int] = mapped_column(Integer, ForeignKey("security_alerts.id"), unique=True, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
+    owner: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class IncidentNoteRow(Base):
+    __tablename__ = "incident_notes"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    incident_id: Mapped[int] = mapped_column(Integer, ForeignKey("incidents.id"), nullable=False, index=True)
+    author: Mapped[str] = mapped_column(String(100), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 def build_engine(url=None):
     return create_engine(url or os.getenv("TRACEPOINT_DATABASE_URL", "sqlite:///./tracepoint.db"), pool_pre_ping=True)
@@ -86,3 +103,64 @@ def list_events(engine, limit=50):
         return [{"event_id": e.event_id, "source": e.source, "event_type": e.event_type,
                  "timestamp": e.timestamp.isoformat(), "actor_id": e.actor_id,
                  "source_ip": e.source_ip} for e in rows]
+
+def incident_detail(session, incident):
+    alert = session.get(AlertRow, incident.alert_id)
+    notes = session.scalars(select(IncidentNoteRow).where(
+        IncidentNoteRow.incident_id == incident.id).order_by(IncidentNoteRow.created_at)).all()
+    return {"id": incident.id, "alert_id": incident.alert_id, "status": incident.status,
+            "owner": incident.owner, "created_at": incident.created_at.isoformat(),
+            "updated_at": incident.updated_at.isoformat(),
+            "severity": alert.severity, "source": alert.source,
+            "event_type": alert.event_type, "reason": alert.reason,
+            "notes": [{"id": n.id, "author": n.author, "body": n.body,
+                       "created_at": n.created_at.isoformat()} for n in notes]}
+
+def create_incident(engine, alert_id):
+    with Session(engine) as session, session.begin():
+        alert = session.get(AlertRow, alert_id)
+        if alert is None:
+            return None
+        existing = session.scalar(select(IncidentRow).where(IncidentRow.alert_id == alert_id))
+        if existing:
+            return incident_detail(session, existing)
+        now = datetime.now(timezone.utc)
+        row = IncidentRow(alert_id=alert_id, status="open", created_at=now, updated_at=now)
+        session.add(row)
+        session.flush()
+        return incident_detail(session, row)
+
+def get_incident(engine, incident_id):
+    with Session(engine) as session:
+        row = session.get(IncidentRow, incident_id)
+        return incident_detail(session, row) if row else None
+
+def list_incidents(engine, limit=50):
+    with Session(engine) as session:
+        rows = session.scalars(select(IncidentRow).order_by(IncidentRow.updated_at.desc()).limit(limit)).all()
+        return [incident_detail(session, row) for row in rows]
+
+def update_incident(engine, incident_id, status=None, owner=None, change_owner=False):
+    with Session(engine) as session, session.begin():
+        row = session.get(IncidentRow, incident_id)
+        if row is None:
+            return None
+        if status is not None:
+            row.status = status
+        if change_owner:
+            row.owner = owner
+        row.updated_at = datetime.now(timezone.utc)
+        session.flush()
+        return incident_detail(session, row)
+
+def add_incident_note(engine, incident_id, author, body):
+    with Session(engine) as session, session.begin():
+        row = session.get(IncidentRow, incident_id)
+        if row is None:
+            return None
+        now = datetime.now(timezone.utc)
+        note = IncidentNoteRow(incident_id=incident_id, author=author, body=body, created_at=now)
+        session.add(note)
+        row.updated_at = now
+        session.flush()
+        return incident_detail(session, row)
