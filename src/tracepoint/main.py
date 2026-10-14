@@ -5,7 +5,7 @@ from secrets import compare_digest
 from uuid import UUID
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
-from .storage import build_engine, initialize, record_event, get_summary, get_activity
+from .storage import build_engine, initialize, record_event, get_summary, get_activity, list_alerts, list_events
 
 app = FastAPI(title="Tracepoint", version="0.2.0")
 engine = build_engine()
@@ -49,3 +49,15 @@ def activity(hours: int = 24):
     if not 1 <= hours <= 168:
         raise HTTPException(status_code=422, detail="hours must be between 1 and 168")
     return {"hours": hours, "buckets": get_activity(engine, hours)}
+
+@app.get("/api/v1/alerts", dependencies=[Depends(require_api_key)])
+def alerts(limit: int = 50):
+    if not 1 <= limit <= 200:
+        raise HTTPException(status_code=422, detail="limit must be between 1 and 200")
+    return {"items": list_alerts(engine, limit)}
+
+@app.get("/api/v1/events", dependencies=[Depends(require_api_key)])
+def events(limit: int = 50):
+    if not 1 <= limit <= 200:
+        raise HTTPException(status_code=422, detail="limit must be between 1 and 200")
+    return {"items": list_events(engine, limit)}
