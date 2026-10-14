@@ -17,7 +17,7 @@ Tracepoint is an open-source security event monitoring and incident investigatio
 
 ## Local development
 
-Requirements: Python 3.12+ and Node.js 20+.
+Requirements: Python 3.12+ and Node.js 22+.
 
 ```bash
 python -m venv .venv
