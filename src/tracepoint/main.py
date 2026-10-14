@@ -5,7 +5,7 @@ from secrets import compare_digest
 from uuid import UUID
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
-from .storage import build_engine, initialize, record_event, get_summary, get_activity, list_alerts, list_events, create_incident, get_incident, list_incidents, update_incident, add_incident_note
+from .storage import build_engine, initialize, record_event, get_summary, get_activity, list_alerts, list_events, create_incident, get_incident, list_incidents, update_incident, add_incident_note, list_incident_audit
 
 app = FastAPI(title="Tracepoint", version="0.2.0")
 engine = build_engine()
@@ -113,3 +113,10 @@ def create_note(incident_id: int, payload: IncidentNoteCreate):
     if result is None:
         raise HTTPException(status_code=404, detail="Incident not found")
     return result
+
+@app.get("/api/v1/incidents/{incident_id}/audit", dependencies=[Depends(require_api_key)])
+def incident_audit(incident_id: int):
+    result = list_incident_audit(engine, incident_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return {"items": result}
