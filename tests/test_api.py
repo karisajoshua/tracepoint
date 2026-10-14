@@ -74,3 +74,26 @@ def test_alert_and_event_lists():
 
 def test_invalid_list_limit():
     assert client.get("/api/v1/events?limit=201", headers=HEADERS).status_code == 422
+
+def test_incident_lifecycle():
+    now = datetime.now(timezone.utc) - timedelta(minutes=1)
+    for i in range(10):
+        assert client.post("/api/v1/events", json=event(now + timedelta(seconds=i)), headers=HEADERS).status_code == 201
+    alert_id = client.get("/api/v1/alerts", headers=HEADERS).json()["items"][0]["id"]
+    opened = client.post("/api/v1/incidents", json={"alert_id": alert_id}, headers=HEADERS)
+    assert opened.status_code == 201
+    incident_id = opened.json()["id"]
+    assert opened.json()["status"] == "open"
+    assert client.post("/api/v1/incidents", json={"alert_id": alert_id}, headers=HEADERS).json()["id"] == incident_id
+    updated = client.patch(f"/api/v1/incidents/{incident_id}", json={"status": "investigating", "owner": "analyst-1"}, headers=HEADERS)
+    assert updated.status_code == 200
+    assert updated.json()["owner"] == "analyst-1"
+    noted = client.post(f"/api/v1/incidents/{incident_id}/notes", json={"author": "analyst-1", "body": "Reviewing suspicious login attempts"}, headers=HEADERS)
+    assert noted.status_code == 201
+    assert len(noted.json()["notes"]) == 1
+    assert len(client.get("/api/v1/incidents", headers=HEADERS).json()["items"]) == 1
+    assert client.get(f"/api/v1/incidents/{incident_id}", headers=HEADERS).json()["status"] == "investigating"
+
+def test_incident_validation():
+    assert client.post("/api/v1/incidents", json={"alert_id": 999}, headers=HEADERS).status_code == 404
+    assert client.patch("/api/v1/incidents/1", json={"status": "invalid"}, headers=HEADERS).status_code == 422
