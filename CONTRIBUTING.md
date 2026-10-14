@@ -83,6 +83,6 @@ PRs that alter authentication, persistence, external integrations, data retentio
 
 A PR is considered ready when the behavior is explained, relevant automated checks pass, regressions are tested, documentation reflects any public-facing changes, and the security implications are understood. Passing CI does not replace code review.
 
-## Licensing note
+## Licensing
 
-The repository does not yet contain an approved open-source license. **Do not assume that public visibility grants reuse or redistribution rights.** The maintainer must approve and publish a license before contributors can rely on a standard open-source grant. Avoid substantial third-party code submissions until this is resolved.
+The current project license is [Apache License 2.0](LICENSE). Previous revisions used MIT; existing grants for those revisions remain in effect. By contributing, you confirm you have the rights needed to submit the work under the project's current license. Do not paste incompatible third-party code or assets into pull requests.
