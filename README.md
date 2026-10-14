@@ -131,7 +131,7 @@ npm install
 npm run build
 ```
 
-Open a focused pull request and describe the tests you ran. For visual changes, attach screenshots. Both Python tests and dashboard builds run in GitHub Actions.
+Open a focused pull request and describe the tests you ran. For visual changes, attach screenshots. Python tests, dashboard builds, CodeQL analysis, dependency review and package checks are configured in GitHub Actions. Check actual workflow results before assuming they pass.
 
 ## Configuration reference
 
@@ -144,9 +144,10 @@ Never commit secrets, expose the ingestion key in frontend code, or submit real 
 
 **Database compatibility warning:** The initial Supabase schema and current SQLAlchemy models have not yet been reconciled and validated together. Do not point the deployed API at the Supabase project until migrations and integration tests are complete.
 
-## License status
+## License
 
-**No open-source license has been selected yet.** Public source visibility does not automatically grant permission to reuse, redistribute or modify the code. A license (Apache-2.0 or MIT are possible options) must be approved and added before promoting the repository as licensed open source.
+Tracepoint's current source is published under the [Apache License 2.0](LICENSE). Earlier revisions were published under MIT; the historical license grant is not revoked by the change. Contributors must have rights to submit their work under the project's current license.
+
 
 ## Community links
 
