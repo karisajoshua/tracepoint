@@ -1,20 +1,16 @@
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
-
 [project]
 name = "tracepoint-security"
-version = "0.1.0"
+version = "0.2.0"
 description = "Security event monitoring and threat analysis"
 requires-python = ">=3.11"
-dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "pydantic>=2,<3"]
-
+dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "pydantic>=2,<3", "sqlalchemy>=2.0,<3", "psycopg[binary]>=3.1,<4"]
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "httpx>=0.27,<1"]
-
 [tool.setuptools.packages.find]
 where = ["src"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
