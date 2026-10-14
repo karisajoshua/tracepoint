@@ -59,3 +59,18 @@ def test_persistence(tmp_path):
         assert get_summary(reopened)["total_events"] == 1
     finally:
         reopened.dispose()
+
+def test_alert_and_event_lists():
+    now = datetime.now(timezone.utc) - timedelta(minutes=1)
+    for i in range(10):
+        response = client.post("/api/v1/events", json=event(now + timedelta(seconds=i)), headers=HEADERS)
+        assert response.status_code == 201
+    alerts = client.get("/api/v1/alerts", headers=HEADERS)
+    events = client.get("/api/v1/events?limit=5", headers=HEADERS)
+    assert alerts.status_code == 200
+    assert len(alerts.json()["items"]) == 1
+    assert events.status_code == 200
+    assert len(events.json()["items"]) == 5
+
+def test_invalid_list_limit():
+    assert client.get("/api/v1/events?limit=201", headers=HEADERS).status_code == 422
