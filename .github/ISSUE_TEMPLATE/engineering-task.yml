@@ -1,0 +1,31 @@
+name: Engineering task
+description: Propose a technical improvement with acceptance criteria
+title: "[Engineering] "
+body:
+  - type: markdown
+    attributes:
+      value: "Report vulnerabilities privately; see SECURITY.md."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Proposed approach and alternatives
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Testing and verification plan
+    validations:
+      required: true
