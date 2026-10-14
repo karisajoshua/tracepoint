@@ -43,6 +43,15 @@ class IncidentNoteRow(Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
+class IncidentAuditRow(Base):
+    __tablename__ = "incident_audit"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    incident_id: Mapped[int] = mapped_column(Integer, ForeignKey("incidents.id"), nullable=False, index=True)
+    action: Mapped[str] = mapped_column(String(32), nullable=False)
+    actor: Mapped[str] = mapped_column(String(100), nullable=False)
+    detail: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
 def build_engine(url=None):
     return create_engine(url or os.getenv("TRACEPOINT_DATABASE_URL", "sqlite:///./tracepoint.db"), pool_pre_ping=True)
 
@@ -116,7 +125,7 @@ def incident_detail(session, incident):
             "notes": [{"id": n.id, "author": n.author, "body": n.body,
                        "created_at": n.created_at.isoformat()} for n in notes]}
 
-def create_incident(engine, alert_id):
+def create_incident(engine, alert_id, actor="api-client"):
     with Session(engine) as session, session.begin():
         alert = session.get(AlertRow, alert_id)
         if alert is None:
@@ -128,6 +137,8 @@ def create_incident(engine, alert_id):
         row = IncidentRow(alert_id=alert_id, status="open", created_at=now, updated_at=now)
         session.add(row)
         session.flush()
+        session.add(IncidentAuditRow(incident_id=row.id, action="created", actor=actor,
+            detail="Incident opened from alert", created_at=now))
         return incident_detail(session, row)
 
 def get_incident(engine, incident_id):
@@ -140,7 +151,7 @@ def list_incidents(engine, limit=50):
         rows = session.scalars(select(IncidentRow).order_by(IncidentRow.updated_at.desc()).limit(limit)).all()
         return [incident_detail(session, row) for row in rows]
 
-def update_incident(engine, incident_id, status=None, owner=None, change_owner=False):
+def update_incident(engine, incident_id, status=None, owner=None, change_owner=False, actor="api-client"):
     with Session(engine) as session, session.begin():
         row = session.get(IncidentRow, incident_id)
         if row is None:
@@ -150,6 +161,8 @@ def update_incident(engine, incident_id, status=None, owner=None, change_owner=F
         if change_owner:
             row.owner = owner
         row.updated_at = datetime.now(timezone.utc)
+        session.add(IncidentAuditRow(incident_id=row.id, action="updated", actor=actor,
+            detail=f"status={row.status}; owner={row.owner or 'unassigned'}", created_at=row.updated_at))
         session.flush()
         return incident_detail(session, row)
 
@@ -162,5 +175,16 @@ def add_incident_note(engine, incident_id, author, body):
         note = IncidentNoteRow(incident_id=incident_id, author=author, body=body, created_at=now)
         session.add(note)
         row.updated_at = now
+        session.add(IncidentAuditRow(incident_id=row.id, action="note_added", actor=author,
+            detail=f"note_id={note.id}", created_at=now))
         session.flush()
         return incident_detail(session, row)
+
+def list_incident_audit(engine, incident_id):
+    with Session(engine) as session:
+        if session.get(IncidentRow, incident_id) is None:
+            return None
+        rows = session.scalars(select(IncidentAuditRow).where(
+            IncidentAuditRow.incident_id == incident_id).order_by(IncidentAuditRow.id)).all()
+        return [{"id": a.id, "action": a.action, "actor": a.actor,
+                 "detail": a.detail, "created_at": a.created_at.isoformat()} for a in rows]
