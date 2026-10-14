@@ -4,7 +4,7 @@ Thanks for helping build Tracepoint, an open-source security event monitoring an
 
 ## Quick start
 
-Requirements: Python 3.12+, Node.js 20+, npm, Git.
+Requirements: Python 3.12+, Node.js 22+, npm, Git.
 
 ```bash
 git clone https://github.com/karisajoshua/tracepoint.git
