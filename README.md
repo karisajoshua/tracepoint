@@ -70,3 +70,86 @@ Contributions, bug reports, design improvements, documentation and tests are wel
 ## Security and data privacy
 
 Never send production credentials, personal information, payment data, or customer security events to the public demo. The dashboard preview uses **synthetic data only**. Barakaz is not connected to Tracepoint.
+
+## Architecture at a glance
+
+```mermaid
+flowchart LR
+  A[Application security events] --> B[FastAPI ingestion]
+  B --> C[Detection rule]
+  B --> D[(SQLAlchemy database)]
+  C --> D
+  D --> E[Summary, alerts and incidents API]
+  E --> F[React dashboard]
+  G[Synthetic demo generator] --> B
+  H[Read-only sample data] --> F
+```
+
+The Vite dashboard and Python API are separate applications. The public preview is intended for synthetic data; its production backend connection and secure analyst authentication are **not complete**. The Supabase project exists, but a verified production database connection is not yet established.
+
+## Repository layout
+
+| Path | Responsibility |
+| --- | --- |
+| `src/tracepoint/main.py` | FastAPI routes, event validation, API-key guard |
+| `src/tracepoint/storage.py` | SQLAlchemy models, persistence, detection and incident queries |
+| `dashboard/src/App.tsx` | React dashboard and investigation UI (currently being modularized) |
+| `dashboard/src/style.css` | Responsive dashboard styles |
+| `scripts/demo_events.py` | Local-only synthetic event generator |
+| `tests/` | Python API tests |
+| `.github/workflows/` | Python and dashboard CI |
+| `docs/` | Integration documentation |
+
+## Example event
+
+With the backend running locally and `TRACEPOINT_API_KEY` set in your shell:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/events \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $TRACEPOINT_API_KEY" \
+  -d '{
+    "event_id": "123e4567-e89b-42d3-a456-426614174000",
+    "source": "demo-app",
+    "event_type": "auth.login_failed",
+    "timestamp": "2026-10-14T12:00:00Z",
+    "actor_id": "demo-user",
+    "source_ip": "192.0.2.10"
+  }'
+```
+
+The example address belongs to the reserved documentation range. Use a new UUID for each new event. Ten qualifying failed-login events from one IP within two minutes can generate a high-severity alert. The `scripts/demo_events.py` utility is easier for a local demonstration.
+
+## Test your changes
+
+```bash
+pytest -q
+cd dashboard
+npm install
+npm run build
+```
+
+Open a focused pull request and describe the tests you ran. For visual changes, attach screenshots. Both Python tests and dashboard builds run in GitHub Actions.
+
+## Configuration reference
+
+| Variable | Where | Purpose |
+| --- | --- | --- |
+| `TRACEPOINT_API_KEY` | Backend only | Shared development API credential |
+| `TRACEPOINT_DATABASE_URL` | Backend only | SQLAlchemy database URL; local SQLite used if unset |
+
+Never commit secrets, expose the ingestion key in frontend code, or submit real customer data to the public preview. A Supabase connection URL must use the correct SQLAlchemy driver and match the deployed schema.
+
+**Database compatibility warning:** The initial Supabase schema and current SQLAlchemy models have not yet been reconciled and validated together. Do not point the deployed API at the Supabase project until migrations and integration tests are complete.
+
+## License status
+
+**No open-source license has been selected yet.** Public source visibility does not automatically grant permission to reuse, redistribute or modify the code. A license (Apache-2.0 or MIT are possible options) must be approved and added before promoting the repository as licensed open source.
+
+## Community links
+
+- [Contribution guide](CONTRIBUTING.md)
+- [Open issues](https://github.com/karisajoshua/tracepoint/issues)
+- [Feature request template](.github/ISSUE_TEMPLATE/feature_request.md)
+- [Bug report template](.github/ISSUE_TEMPLATE/bug_report.md)
+- [Pull request template](.github/pull_request_template.md)
