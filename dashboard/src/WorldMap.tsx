@@ -22,19 +22,48 @@ function loadLeaflet():Promise<LeafletAPI>{
 const samples:[number,number,string][]=[[40.71,-74.01,'New York'],[51.51,-0.13,'London'],[-1.29,36.82,'Nairobi'],[1.35,103.82,'Singapore'],[35.68,139.69,'Tokyo'],[-33.87,151.21,'Sydney']];
 export default function WorldMap({demo}:{demo:boolean}){
  const holder=useRef<HTMLDivElement>(null);const mapRef=useRef<LeafletMap|null>(null);
- const [error,setError]=useState('');const [layer,setLayer]=useState<'street'|'terrain'>('street');
+ const [error,setError]=useState('');
+ const [place,setPlace]=useState('');
+ const [matches,setMatches]=useState<{display_name:string;lat:string;lon:string;boundingbox:string[]}[]>([]);
+ const [searching,setSearching]=useState(false);
+ const [searchError,setSearchError]=useState('');
+ const [zoomDetail,setZoomDetail]=useState('');
+ async function findPlace(e:React.FormEvent<HTMLFormElement>){
+ e.preventDefault();const q=place.trim();if(q.length<2)return;
+ setSearching(true);setSearchError('');setMatches([]);
+ try{
+ const response=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=0&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}});
+ if(!response.ok)throw new Error('Place search is temporarily unavailable');
+ const found=await response.json() as {display_name:string;lat:string;lon:string;boundingbox:string[]}[];
+ setMatches(found);if(!found.length)setSearchError('No matching places found. Try a more specific name.');
+ }catch(err){setSearchError(err instanceof Error?err.message:'Unable to search locations');}
+ finally{setSearching(false);}
+ }
+ function goToPlace(p:{display_name:string;lat:string;lon:string;boundingbox:string[]}){
+ const b=p.boundingbox.map(Number);
+ if(b.length===4&&b.every(Number.isFinite)){mapRef.current?.fitBounds([[b[0],b[2]],[b[1],b[3]]],{padding:[24,24],maxZoom:17});}
+ else mapRef.current?.flyTo([Number(p.lat),Number(p.lon)],14);
+ setZoomDetail(p.display_name);setMatches([]);
+ }
  useEffect(()=>{let cancelled=false;loadLeaflet().then(L=>{
  if(cancelled||!holder.current)return;
- const map=L.map(holder.current,{zoomControl:true,scrollWheelZoom:false,worldCopyJump:true,attributionControl:true}).setView([18,8],2);
+ const map=L.map(holder.current,{zoomControl:true,scrollWheelZoom:false,worldCopyJump:true,attributionControl:true,maxZoom:19}).setView([18,8],2);
  mapRef.current=map;
- L.tileLayer(layer==='street'?'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png':'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:layer==='street'?18:17,minZoom:1,attribution:layer==='street'?'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>':'&copy; OpenStreetMap contributors, SRTM | <a href="https://opentopomap.org">OpenTopoMap</a>'}).addTo(map);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,minZoom:1,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'}).addTo(map);
  if(demo)samples.forEach(([lat,lon,city])=>{L.circleMarker([lat,lon],{radius:7,color:'#f8b778',fillColor:'#f16662',fillOpacity:.85,weight:2}).addTo(map).bindPopup('<strong>Sample location</strong><div>'+city+'</div><small>Demonstration only — not a detected attack</small>');});
  requestAnimationFrame(()=>map.invalidateSize());
  }).catch(e=>{if(!cancelled)setError(e instanceof Error?e.message:'Map unavailable');});
  return()=>{cancelled=true;mapRef.current?.remove();mapRef.current=null;};
- },[demo,layer]);
+ },[demo]);
  return <div className="world-map real-world-map" aria-label={demo?'Interactive OpenStreetMap world map with synthetic example locations':'Interactive OpenStreetMap world map; no geolocated threat data'}>
- <div className="leaflet-holder" ref={holder}/><div className="map-tools"><button type="button" onClick={()=>mapRef.current?.setView([18,8],2)}>World</button><button type="button" onClick={()=>{if(demo)mapRef.current?.fitBounds(samples.map(([a,b])=>[a,b]),{padding:[24,24]});}}>Fit markers</button><select aria-label="Map layer" value={layer} onChange={e=>setLayer(e.target.value as 'street'|'terrain')}><option value="street">Street map</option><option value="terrain">Terrain</option></select></div>
+ <div className="leaflet-holder" ref={holder}/>
+ <div className="map-search">
+ <form onSubmit={findPlace}><input aria-label="Search country, city, street or address" placeholder="Search country, city, street…" value={place} onChange={e=>setPlace(e.target.value)} minLength={2}/><button type="submit" disabled={searching}>{searching?'…':'⌕ Search'}</button></form>
+ {matches.length>0&&<div className="map-results" role="listbox" aria-label="Matching places">{matches.map((p,i)=><button type="button" key={i} onClick={()=>goToPlace(p)}>{p.display_name}</button>)}</div>}
+ {searchError&&<div className="map-search-error" role="status">{searchError}</div>}
+ </div>
+ <div className="map-tools"><button type="button" onClick={()=>{mapRef.current?.setView([18,8],2);setZoomDetail('');setMatches([]);}}>World</button><button type="button" onClick={()=>{if(demo)mapRef.current?.fitBounds(samples.map(([a,b])=>[a,b]),{padding:[24,24]});}}>Fit markers</button></div>
+ {zoomDetail&&<div className="map-selected" title={zoomDetail}>Viewing: {zoomDetail}</div>}
  {error&&<div className="map-error" role="status">{error}. Check network access.</div>}
  <div className="map-status">{demo?'● SAMPLE MARKERS — NOT LIVE THREATS':'○ NO GEOLOCATED EVENTS AVAILABLE'}</div>
  </div>;
