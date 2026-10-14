@@ -2,23 +2,14 @@
 from datetime import datetime, timedelta, timezone
 import os
 from secrets import compare_digest
-from uuid import UUID
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
+from .schemas import SecurityEvent
 from .storage import build_engine, initialize, record_event, get_summary, get_activity, list_alerts, list_events, create_incident, get_incident, list_incidents, update_incident, add_incident_note, list_incident_audit
 
 app = FastAPI(title="Tracepoint", version="0.2.0")
 engine = build_engine()
 initialize(engine)
-
-class SecurityEvent(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    event_id: UUID
-    source: str = Field(min_length=1, max_length=80)
-    event_type: str = Field(min_length=1, max_length=100)
-    timestamp: datetime
-    actor_id: str | None = Field(default=None, max_length=128)
-    source_ip: str | None = Field(default=None, max_length=45)
 
 def require_api_key(x_api_key: str | None = Header(default=None)):
     expected = os.getenv("TRACEPOINT_API_KEY")
