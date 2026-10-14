@@ -1,3 +1,4 @@
+import Map3D from './Map3D';
 import {useEffect,useRef,useState} from 'react';
 /**
  * Geographic world basemap from OpenStreetMap raster tiles, rendered by Leaflet.
@@ -21,6 +22,7 @@ function loadLeaflet():Promise<LeafletAPI>{
 }
 const samples:[number,number,string][]=[[40.71,-74.01,'New York'],[51.51,-0.13,'London'],[-1.29,36.82,'Nairobi'],[1.35,103.82,'Singapore'],[35.68,139.69,'Tokyo'],[-33.87,151.21,'Sydney']];
 export default function WorldMap({demo}:{demo:boolean}){
+ const [mode,setMode]=useState<'2d'|'3d'>('2d');
  const holder=useRef<HTMLDivElement>(null);const mapRef=useRef<LeafletMap|null>(null);
  const [error,setError]=useState('');
  const [place,setPlace]=useState('');
@@ -45,7 +47,7 @@ export default function WorldMap({demo}:{demo:boolean}){
  else mapRef.current?.flyTo([Number(p.lat),Number(p.lon)],14);
  setZoomDetail(p.display_name);setMatches([]);
  }
- useEffect(()=>{let cancelled=false;loadLeaflet().then(L=>{
+ useEffect(()=>{if(mode==='3d')return;let cancelled=false;loadLeaflet().then(L=>{
  if(cancelled||!holder.current)return;
  const map=L.map(holder.current,{zoomControl:true,scrollWheelZoom:false,worldCopyJump:true,attributionControl:true,maxZoom:19}).setView([18,8],2);
  mapRef.current=map;
@@ -54,8 +56,8 @@ export default function WorldMap({demo}:{demo:boolean}){
  requestAnimationFrame(()=>map.invalidateSize());
  }).catch(e=>{if(!cancelled)setError(e instanceof Error?e.message:'Map unavailable');});
  return()=>{cancelled=true;mapRef.current?.remove();mapRef.current=null;};
- },[demo]);
- return <div className="world-map real-world-map" aria-label={demo?'Interactive OpenStreetMap world map with synthetic example locations':'Interactive OpenStreetMap world map; no geolocated threat data'}>
+ },[demo,mode]);
+ return <div className="map-mode-wrapper"><div className="map-mode-switch" role="group" aria-label="Map dimension"><button className={mode==='2d'?'active':''} onClick={()=>setMode('2d')}>2D</button><button className={mode==='3d'?'active':''} onClick={()=>setMode('3d')}>3D</button></div>{mode==='3d'?<Map3D demo={demo}/>:<div className="world-map real-world-map" aria-label={demo?'Interactive OpenStreetMap world map with synthetic example locations':'Interactive OpenStreetMap world map; no geolocated threat data'}>
  <div className="leaflet-holder" ref={holder}/>
  <div className="map-search">
  <form onSubmit={findPlace}><input aria-label="Search country, city, street or address" placeholder="Search country, city, street…" value={place} onChange={e=>setPlace(e.target.value)} minLength={2}/><button type="submit" disabled={searching}>{searching?'…':'⌕ Search'}</button></form>
@@ -66,5 +68,5 @@ export default function WorldMap({demo}:{demo:boolean}){
  {zoomDetail&&<div className="map-selected" title={zoomDetail}>Viewing: {zoomDetail}</div>}
  {error&&<div className="map-error" role="status">{error}. Check network access.</div>}
  <div className="map-status">{demo?'● SAMPLE MARKERS — NOT LIVE THREATS':'○ NO GEOLOCATED EVENTS AVAILABLE'}</div>
- </div>;
+ </div>}</div>;
 }
