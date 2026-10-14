@@ -91,6 +91,9 @@ def test_incident_lifecycle():
     noted = client.post(f"/api/v1/incidents/{incident_id}/notes", json={"author": "analyst-1", "body": "Reviewing suspicious login attempts"}, headers=HEADERS)
     assert noted.status_code == 201
     assert len(noted.json()["notes"]) == 1
+    audit = client.get(f"/api/v1/incidents/{incident_id}/audit", headers=HEADERS)
+    assert audit.status_code == 200
+    assert [entry["action"] for entry in audit.json()["items"]] == ["created", "updated", "note_added"]
     assert len(client.get("/api/v1/incidents", headers=HEADERS).json()["items"]) == 1
     assert client.get(f"/api/v1/incidents/{incident_id}", headers=HEADERS).json()["status"] == "investigating"
 
