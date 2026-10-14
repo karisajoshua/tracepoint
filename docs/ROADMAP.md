@@ -8,10 +8,11 @@ This document is a prioritized **plan**, not a claim of completed functionality.
 - [x] Python API tests and dashboard build CI
 - [x] Synthetic public dashboard preview
 - [x] Interactive 2D mapping and initial 3D map implementation
-- [ ] Select and publish an explicit open-source license (maintainer decision required)
+- [x] Publish Apache License 2.0 (previous revisions used MIT)
 - [ ] Verify clean-room contributor setup and map build/deployment
 - [ ] Add branch protection and required checks (repository administrator)
-- [ ] Add accessible automated frontend tests and dependency/security checks
+- [x] Configure automated dependency review, Dependabot, CodeQL and packaging checks (verify workflow execution)
+- [ ] Add accessible automated frontend tests
 
 ## Phase 1 — Production foundations
 
