@@ -4,7 +4,7 @@
 
 Tracepoint is an open-source security event monitoring and incident investigation project, built with Python/FastAPI, SQLAlchemy/PostgreSQL and React/TypeScript. It is under active development and **not production-ready**.
 
-**[Live dashboard preview](https://tracepoint-beryl.vercel.app)** · **[Contribute](CONTRIBUTING.md)** · **[Issues](https://github.com/karisajoshua/tracepoint/issues)**
+**[Live dashboard preview](https://tracepoint-beryl.vercel.app)** · **[Contribute](CONTRIBUTING.md)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Roadmap](docs/ROADMAP.md)** · **[Security](SECURITY.md)** · **[Issues](https://github.com/karisajoshua/tracepoint/issues)
 
 ## What works today
 
@@ -61,9 +61,11 @@ All `/api/v1` endpoints currently use a shared `X-API-Key` development credentia
 
 ## Roadmap
 
-Analyst identity and RBAC, migrations, production-safe API routing, event pipeline hardening, detection expansion, accessible investigation workflows, and real-time monitoring.
+See the [prioritized engineering roadmap](docs/ROADMAP.md), including current limitations and suggested contribution areas.
 
 ## Contributing
+
+For design decisions, see the [architecture](docs/ARCHITECTURE.md) and [ADR convention](docs/adr/0001-contribution-and-architecture-decisions.md). For vulnerability disclosure, see [SECURITY.md](SECURITY.md).
 
 Contributions, bug reports, design improvements, documentation and tests are welcome. Read **[CONTRIBUTING.md](CONTRIBUTING.md)** before submitting a pull request. Please report security vulnerabilities privately rather than opening a public issue.
 
