@@ -72,3 +72,17 @@ def get_activity(engine, hours=24):
         bucket = stamp.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:00:00Z")
         counts[bucket] = counts.get(bucket, 0) + 1
     return [{"time": k, "events": v} for k, v in sorted(counts.items())]
+
+def list_alerts(engine, limit=50):
+    with Session(engine) as session:
+        rows = session.scalars(select(AlertRow).order_by(AlertRow.detected_at.desc()).limit(limit)).all()
+        return [{"id": a.id, "event_id": a.event_id, "source": a.source,
+                 "event_type": a.event_type, "severity": a.severity,
+                 "reason": a.reason, "detected_at": a.detected_at.isoformat()} for a in rows]
+
+def list_events(engine, limit=50):
+    with Session(engine) as session:
+        rows = session.scalars(select(EventRow).order_by(EventRow.timestamp.desc()).limit(limit)).all()
+        return [{"event_id": e.event_id, "source": e.source, "event_type": e.event_type,
+                 "timestamp": e.timestamp.isoformat(), "actor_id": e.actor_id,
+                 "source_ip": e.source_ip} for e in rows]
