@@ -1,0 +1,16 @@
+[package]
+name = "tracepoint-events"
+version = "0.1.0"
+edition = "2021"
+description = "Typed, deterministic security event normalization for Tracepoint"
+license = "Apache-2.0"
+repository = "https://github.com/karisajoshua/tracepoint"
+publish = false
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["serde"] }
+
+[dev-dependencies]
