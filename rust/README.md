@@ -13,6 +13,8 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 ```
 
+Run the optional normalization microbenchmark with `cargo run --release --example throughput -- 100000`. This measures a single Rust code path only; do not compare it with API throughput or Python without matching workloads and hardware. Shared fixtures live in `contracts/security_event_cases.json` and are exercised by the Rust test suite. Python parity is a separate acceptance gate because the existing Python API still has validation differences.
+
 Requires a maintained Rust stable toolchain. The crate is not yet invoked by the Python API, and no throughput improvement is claimed.
 
 ## Integration strategy
@@ -26,3 +28,7 @@ Requires a maintained Rust stable toolchain. The crate is not yet invoked by the
 ## Security expectations
 
 Use bounded payloads at ingress, reject malformed inputs, avoid unsafe Rust without an approved design, audit dependencies, and test canonicalization consistency. This crate deliberately has no access to production credentials or Supabase.
+
+## Architectural decision
+
+See [ADR-0002](../docs/adr/0002-rust-event-processing.md) for the decision gates and tradeoffs between keeping Python, PyO3 and a standalone Rust worker.
