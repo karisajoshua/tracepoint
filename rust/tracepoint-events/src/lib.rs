@@ -45,10 +45,7 @@ impl std::error::Error for EventError {}
 
 fn clean_required(value: &mut String, max: usize, field: &'static str) -> Result<(), EventError> {
     *value = value.trim().to_owned();
-    if value.is_empty()
-        || value.len() > max
-        || value.chars().any(|ch| ch.is_control())
-    {
+    if value.is_empty() || value.len() > max || value.chars().any(|ch| ch.is_control()) {
         return Err(EventError::InvalidField(field));
     }
     Ok(())
@@ -96,37 +93,54 @@ mod tests {
 
     #[test]
     fn canonicalizes_ipv6() {
-        let event = parse_and_normalize(&payload("2001:0DB8:0000:0000:0000:0000:0000:0001")).unwrap();
+        let event =
+            parse_and_normalize(&payload("2001:0DB8:0000:0000:0000:0000:0000:0001")).unwrap();
         assert_eq!(event.source_ip.as_deref(), Some("2001:db8::1"));
     }
 
     #[test]
     fn rejects_invalid_ip() {
-        assert_eq!(parse_and_normalize(&payload("999.0.0.1")).unwrap_err(), EventError::InvalidIp);
+        assert_eq!(
+            parse_and_normalize(&payload("999.0.0.1")).unwrap_err(),
+            EventError::InvalidIp
+        );
     }
 
     #[test]
     fn rejects_control_characters() {
         let input = payload("192.0.2.10").replace("auth.login_failed", "auth\\nlogin_failed");
-        assert_eq!(parse_and_normalize(&input).unwrap_err(), EventError::InvalidField("event_type"));
+        assert_eq!(
+            parse_and_normalize(&input).unwrap_err(),
+            EventError::InvalidField("event_type")
+        );
     }
 
     #[test]
     fn rejects_unknown_fields() {
-        let input = payload("192.0.2.10").replace(r#""actor_id":null"#, r#""actor_id":null,"admin":true"#);
-        assert!(matches!(parse_and_normalize(&input), Err(EventError::InvalidJson(_))));
+        let input =
+            payload("192.0.2.10").replace(r#""actor_id":null"#, r#""actor_id":null,"admin":true"#);
+        assert!(matches!(
+            parse_and_normalize(&input),
+            Err(EventError::InvalidJson(_))
+        ));
     }
 
     #[test]
     fn rejects_whitespace_only_source() {
         let input = payload("192.0.2.10").replace(" demo ", "   ");
-        assert_eq!(parse_and_normalize(&input).unwrap_err(), EventError::InvalidField("source"));
+        assert_eq!(
+            parse_and_normalize(&input).unwrap_err(),
+            EventError::InvalidField("source")
+        );
     }
 
     #[test]
     fn rejects_naive_timestamps() {
         let input = payload("192.0.2.10").replace("2026-10-14T12:00:00Z", "2026-10-14T12:00:00");
-        assert!(matches!(parse_and_normalize(&input), Err(EventError::InvalidJson(_))));
+        assert!(matches!(
+            parse_and_normalize(&input),
+            Err(EventError::InvalidJson(_))
+        ));
     }
 
     #[test]
