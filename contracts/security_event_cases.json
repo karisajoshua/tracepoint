@@ -1,0 +1,88 @@
+[
+  {
+    "name": "valid_ipv4",
+    "valid": true,
+    "input": {
+      "event_id": "123e4567-e89b-42d3-a456-426614174000",
+      "source": "auth-service",
+      "event_type": "auth.login_failed",
+      "timestamp": "2026-10-16T00:00:00Z",
+      "actor_id": null,
+      "source_ip": "192.0.2.10"
+    }
+  },
+  {
+    "name": "valid_ipv6",
+    "valid": true,
+    "input": {
+      "event_id": "123e4567-e89b-42d3-a456-426614174000",
+      "source": "auth-service",
+      "event_type": "auth.login_failed",
+      "timestamp": "2026-10-16T00:00:00Z",
+      "actor_id": "user-1",
+      "source_ip": "2001:db8::1"
+    }
+  },
+  {
+    "name": "missing_optional_fields",
+    "valid": true,
+    "input": {
+      "event_id": "123e4567-e89b-42d3-a456-426614174000",
+      "source": "auth-service",
+      "event_type": "api.denied",
+      "timestamp": "2026-10-16T00:00:00Z"
+    }
+  },
+  {
+    "name": "invalid_uuid",
+    "valid": false,
+    "input": {
+      "event_id": "invalid",
+      "source": "auth-service",
+      "event_type": "auth.login_failed",
+      "timestamp": "2026-10-16T00:00:00Z"
+    }
+  },
+  {
+    "name": "invalid_timestamp",
+    "valid": false,
+    "input": {
+      "event_id": "123e4567-e89b-42d3-a456-426614174000",
+      "source": "auth-service",
+      "event_type": "auth.login_failed",
+      "timestamp": "2026-10-16T00:00:00"
+    }
+  },
+  {
+    "name": "unknown_field",
+    "valid": false,
+    "input": {
+      "event_id": "123e4567-e89b-42d3-a456-426614174000",
+      "source": "auth-service",
+      "event_type": "auth.login_failed",
+      "timestamp": "2026-10-16T00:00:00Z",
+      "admin": true
+    }
+  },
+  {
+    "name": "empty_source",
+    "valid": false,
+    "input": {
+      "event_id": "123e4567-e89b-42d3-a456-426614174000",
+      "source": "",
+      "event_type": "auth.login_failed",
+      "timestamp": "2026-10-16T00:00:00Z"
+    }
+  },
+  {
+    "name": "bad_ip",
+    "valid": false,
+    "input": {
+      "event_id": "123e4567-e89b-42d3-a456-426614174000",
+      "source": "auth-service",
+      "event_type": "auth.login_failed",
+      "timestamp": "2026-10-16T00:00:00Z",
+      "source_ip": "not-an-ip"
+    }
+  }
+]
