@@ -149,4 +149,22 @@ mod tests {
         let serialized = serde_json::to_string(&event).unwrap();
         assert_eq!(parse_and_normalize(&serialized).unwrap(), event);
     }
+    #[test]
+    fn shared_event_contract_fixtures() {
+        let fixtures: serde_json::Value =
+            serde_json::from_str(include_str!("../../../contracts/security_event_cases.json"))
+                .expect("shared event fixtures must be valid JSON");
+        let cases = fixtures.as_array().expect("fixtures must be an array");
+        for case in cases {
+            let name = case["name"].as_str().expect("case name");
+            let input = serde_json::to_string(&case["input"]).expect("fixture input");
+            let expected = case["valid"].as_bool().expect("case expectation");
+            assert_eq!(
+                parse_and_normalize(&input).is_ok(),
+                expected,
+                "contract mismatch for {name}"
+            );
+        }
+    }
+
 }
