@@ -27,6 +27,10 @@ flowchart LR
 | Synthetic generator | `scripts/demo_events.py` | Local-only event simulation |
 | Tests | `tests/` | Python API behavior |
 
+## Rust processing direction
+
+The Rust crate at `rust/tracepoint-events` is an independently testable normalization library. It is not currently called by FastAPI, and has no database or network access. Cross-language contract tests and benchmarks must precede any production integration. See [Rust development](../rust/README.md).
+
 ## Trust boundaries
 
 1. **Untrusted event producers → API:** validate schema, enforce ingestion authorization, and prevent unbounded payloads. The current shared API key is a development mechanism only.
